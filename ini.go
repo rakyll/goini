@@ -83,7 +83,6 @@ func (dict Dict) parseLine(section, line string) (string, error) {
 	// section name
 	if line[0] == '[' && line[len(line)-1] == ']' {
 		section := strings.TrimFunc(line[1:len(line)-1], unicode.IsSpace)
-		section = strings.ToLower(section)
 		dict[section] = make(map[string]string)
 		return section, nil
 	}
@@ -107,7 +106,6 @@ func (dict Dict) parseLine(section, line string) (string, error) {
 }
 
 func (dict Dict) add(section, key, value string) {
-	key = strings.ToLower(key)
 	dict[section][key] = value
 }
 
