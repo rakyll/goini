@@ -30,9 +30,16 @@ func init() {
 
 func TestLoad(t *testing.T) {
 	if err != nil {
-		t.Error("Example: load error:", err)
+		t.Fatal("Example: load error:", err)
 	}
 	t.Logf("dict:%v:\n", dict)
+
+	_, err2 := Load("badExample.ini")
+	if err2 == nil {
+		t.Errorf("BadExample: loaded without error:")
+	}
+	t.Logf("badExample:err:%v:\n", err2)
+
 }
 
 func TestNoSemiColon(t *testing.T) {

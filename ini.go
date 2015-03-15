@@ -24,15 +24,31 @@ var (
 	regOnlyKey     = regexp.MustCompile("^([^= \t]+)$")
 )
 
+type iniReader interface {
+	ReadLine() (line []byte, isPrefix bool, err error)
+}
+
 func Load(filename string) (dict Dict, err error) {
+	
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	dict = make(map[string]map[string]string)
 	reader := bufio.NewReader(file)
+	dict, err = _Load(reader)
+	if err != nil {
+		return nil, newError(
+			err.Error() + fmt.Sprintf("'%s:%v'.", filename, err))
+	}
+
+	return
+}
+
+func _Load(reader iniReader) (dict Dict, err error) {
+
+	dict = make(map[string]map[string]string)
 	lineno := 0
 	section := ""
 	dict[section] = make(map[string]string)
@@ -60,7 +76,7 @@ func Load(filename string) (dict Dict, err error) {
 		section, err = dict.parseLine(section, line)
 		if err != nil {
 			return nil, newError(
-				err.Error() + fmt.Sprintf("'%s:%d'.", filename, lineno))
+				err.Error() + fmt.Sprintf("'%d'.", lineno))
 		}
 	}
 
