@@ -32,6 +32,24 @@ func TestLoad(t *testing.T) {
 	if err != nil {
 		t.Error("Example: load error:", err)
 	}
+	t.Logf("dict:%v:\n", dict)
+}
+
+func TestNoSemiColon(t *testing.T) {
+	b, found := dict.GetDouble("wine", "zup")
+	if !found  {
+		t.Error("Example: failed to find key for line with no semi-colon.")
+	}
+	if b != 12.5 {
+		t.Error("Example: failed to find value 12.5 for line with no semi-colon.")
+	}
+}
+
+func TestOnlyKey(t *testing.T) {
+	_, found := dict.GetString("wine", "nuch")
+	if !found  {
+		t.Error("Example: failed to find key for line with no value.")
+	}
 }
 
 func TestWrite(t *testing.T) {

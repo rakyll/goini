@@ -21,6 +21,7 @@ var (
 	regSingleQuote = regexp.MustCompile("^([^= \t]+)[ \t]*=[ \t]*'([^']*)'$")
 	regNoQuote     = regexp.MustCompile("^([^= \t]+)[ \t]*=[ \t]*([^#;]+)")
 	regNoValue     = regexp.MustCompile("^([^= \t]+)[ \t]*=[ \t]*([#;].*)?")
+	regOnlyKey     = regexp.MustCompile("^([^= \t]+)$")
 )
 
 func Load(filename string) (dict Dict, err error) {
@@ -101,7 +102,11 @@ func (dict Dict) parseLine(section, line string) (string, error) {
 	} else if m = regNoValue.FindAllStringSubmatch(line, 1); m != nil {
 		dict.add(section, m[0][1], "")
 		return section, nil
+	} else if m = regOnlyKey.FindAllStringSubmatch(line, 1); m != nil {
+		dict.add(section, m[0][1], "")
+		return section, nil
 	}
+
 
 	return section, newError("iniparser: syntax error at ")
 }
