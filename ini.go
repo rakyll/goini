@@ -12,6 +12,9 @@ import (
 	"unicode"
 )
 
+//holds parsed ini file
+//top level is sections and top level key/value pairs
+//second level is key/value pairs within a section
 type Dict map[string]map[string]string
 
 type Error string
@@ -24,10 +27,12 @@ var (
 	regOnlyKey     = regexp.MustCompile("^([^= \t]+)$")
 )
 
+//interface for _Load method below
 type iniReader interface {
 	ReadLine() (line []byte, isPrefix bool, err error)
 }
 
+//load up an ini file and parse it into a Dict
 func Load(filename string) (dict Dict, err error) {
 	
 	file, err := os.Open(filename)
@@ -41,6 +46,21 @@ func Load(filename string) (dict Dict, err error) {
 	if err != nil {
 		return nil, newError(
 			err.Error() + fmt.Sprintf("'%s:%v'.", filename, err))
+	}
+
+	return
+}
+
+//load ini from string
+func LoadString(iniStr string) (dict Dict, err error) {
+
+	strReader := strings.NewReader(iniStr)
+	reader := bufio.NewReader(strReader)
+
+	dict, err = _Load(reader)
+	if err != nil {
+		return nil, newError(
+			err.Error() + fmt.Sprintf("ini from string:'%v'.", err))
 	}
 
 	return
