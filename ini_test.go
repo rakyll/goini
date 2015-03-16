@@ -3,6 +3,7 @@ package ini
 import (
 	"io/ioutil"
 	"testing"
+	"strings"
 )
 
 const (
@@ -30,7 +31,53 @@ func init() {
 
 func TestLoad(t *testing.T) {
 	if err != nil {
-		t.Error("Example: load error:", err)
+		t.Fatal("Example: load error:", err)
+	}
+	t.Logf("dict:%v:\n", dict)
+
+	_, err2 := Load("badExample.ini")
+	if err2 == nil {
+		t.Errorf("BadExample: loaded without error:")
+	}
+	t.Logf("badExample:err:%v:\n", err2)
+
+}
+
+func TestLoadString(t *testing.T) {
+
+	exampleDict, err := LoadString(exampleStr)
+	if err != nil {
+		t.Errorf("LoadString: failed to load exampleStr:%v:", err)
+	}
+
+	nsk1, _ := exampleDict.GetString("section1", "key1")
+
+	if nsk1 != "value2" {
+		t.Errorf("Dict not loaded from string as expected.")
+	}
+
+
+	nk1, _ := exampleDict.GetBool("", "key1")
+
+	if nk1 != true {
+		t.Errorf("Dict not loaded from string as expected.")
+	}
+
+}
+func TestNoSemiColon(t *testing.T) {
+	b, found := dict.GetDouble("wine", "zup")
+	if !found  {
+		t.Error("Example: failed to find key for line with no semi-colon.")
+	}
+	if b != 12.5 {
+		t.Error("Example: failed to find value 12.5 for line with no semi-colon.")
+	}
+}
+
+func TestOnlyKey(t *testing.T) {
+	_, found := dict.GetString("wine", "nuch")
+	if !found  {
+		t.Error("Example: failed to find key for line with no value.")
 	}
 }
 
@@ -163,7 +210,41 @@ func TestString(t *testing.T) {
 	d.SetInt("section1", "key2", 5)
 	d.SetDouble("section1", "key3", 1.3)
 	d.SetDouble("section2", "key1", 5.0)
-	if d.String() != exampleStr {
+
+	s2k1, _ := d.GetDouble("section2", "key1")
+	if s2k1 != 5.0 {
+		t.Errorf("GetDouble: failed to load section2 key1:d:%v:", d)
+	}
+
+	stringified := d.String()
+
+	if strings.Contains(stringified, "section2") != true {
+		t.Fatalf("LoadString: failed to load stringified:section2 missing:%v:", stringified)
+	}
+	if strings.Contains(stringified, "key1 = true") != true {
+		t.Fatalf("LoadString: failed to load stringified:top scope key1 missing:%v:", stringified)
+	}
+	if strings.Contains(stringified, "key1 = 5") != true {
+		t.Fatalf("LoadString: failed to load stringified:section2 key1 is 5 not 5.0:%v:", stringified)
+	}
+	if strings.Contains(stringified, "key1 = value2") != true {
+		t.Fatalf("LoadString: failed to load stringifiedsection1 key1 missing:%v:", stringified)
+	}
+	newDict, err := LoadString(stringified)
+	if err != nil {
+		t.Fatalf("LoadString: failed to load stringified:%v:", err)
+	}
+
+	a, _ := newDict.GetBool("", "key1")
+
+	if a != true {
+		t.Errorf("Dict cannot be stringified as expected:new:%v:old:true:newDict:%v:", a, newDict)
+	}
+
+	nsk1, _ := newDict.GetString("section1", "key1")
+
+	if nsk1 != "value2" {
 		t.Errorf("Dict cannot be stringified as expected.")
 	}
+
 }

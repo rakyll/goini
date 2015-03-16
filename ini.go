@@ -12,6 +12,9 @@ import (
 	"unicode"
 )
 
+//holds parsed ini file
+//top level is sections and top level key/value pairs
+//second level is key/value pairs within a section
 type Dict map[string]map[string]string
 
 type Error string
@@ -21,17 +24,51 @@ var (
 	regSingleQuote = regexp.MustCompile("^([^= \t]+)[ \t]*=[ \t]*'([^']*)'$")
 	regNoQuote     = regexp.MustCompile("^([^= \t]+)[ \t]*=[ \t]*([^#;]+)")
 	regNoValue     = regexp.MustCompile("^([^= \t]+)[ \t]*=[ \t]*([#;].*)?")
+	regOnlyKey     = regexp.MustCompile("^([^= \t]+)$")
 )
 
+//interface for _Load method below
+type iniReader interface {
+	ReadLine() (line []byte, isPrefix bool, err error)
+}
+
+//load up an ini file and parse it into a Dict
 func Load(filename string) (dict Dict, err error) {
+	
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	dict = make(map[string]map[string]string)
 	reader := bufio.NewReader(file)
+	dict, err = _Load(reader)
+	if err != nil {
+		return nil, newError(
+			err.Error() + fmt.Sprintf("'%s:%v'.", filename, err))
+	}
+
+	return
+}
+
+//load ini from string
+func LoadString(iniStr string) (dict Dict, err error) {
+
+	strReader := strings.NewReader(iniStr)
+	reader := bufio.NewReader(strReader)
+
+	dict, err = _Load(reader)
+	if err != nil {
+		return nil, newError(
+			err.Error() + fmt.Sprintf("ini from string:'%v'.", err))
+	}
+
+	return
+}
+
+func _Load(reader iniReader) (dict Dict, err error) {
+
+	dict = make(map[string]map[string]string)
 	lineno := 0
 	section := ""
 	dict[section] = make(map[string]string)
@@ -59,7 +96,7 @@ func Load(filename string) (dict Dict, err error) {
 		section, err = dict.parseLine(section, line)
 		if err != nil {
 			return nil, newError(
-				err.Error() + fmt.Sprintf("'%s:%d'.", filename, lineno))
+				err.Error() + fmt.Sprintf("'%d'.", lineno))
 		}
 	}
 
@@ -101,7 +138,11 @@ func (dict Dict) parseLine(section, line string) (string, error) {
 	} else if m = regNoValue.FindAllStringSubmatch(line, 1); m != nil {
 		dict.add(section, m[0][1], "")
 		return section, nil
+	} else if m = regOnlyKey.FindAllStringSubmatch(line, 1); m != nil {
+		dict.add(section, m[0][1], "")
+		return section, nil
 	}
+
 
 	return section, newError("iniparser: syntax error at ")
 }
