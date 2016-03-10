@@ -16,6 +16,9 @@ type Dict map[string]map[string]string
 
 type Error string
 
+// MaxIniLineSize is a buffer size that used for ini lines reading
+var MaxIniLineSize = 4096
+
 var (
 	regDoubleQuote = regexp.MustCompile("^([^= \t]+)[ \t]*=[ \t]*\"([^\"]*)\"$")
 	regSingleQuote = regexp.MustCompile("^([^= \t]+)[ \t]*=[ \t]*'([^']*)'$")
@@ -31,7 +34,7 @@ func Load(filename string) (dict Dict, err error) {
 	defer file.Close()
 
 	dict = make(map[string]map[string]string)
-	reader := bufio.NewReader(file)
+	reader := bufio.NewReaderSize(file, MaxIniLineSize)
 	lineno := 0
 	section := ""
 	dict[section] = make(map[string]string)
